@@ -1,4 +1,5 @@
 class User < ApplicationRecord
+  has_many :microposts, dependent: :destroy #マイクロポストは、その所有者（ユーザー）と一緒に破棄されることを保証する
   attr_accessor :remember_token #rememberメソッドをUserモデルに追加する
   before_save { email.downcase! } #email属性を小文字に変換してメールアドレスの一意性を保証する。before_save {self.email = email.downcase }と同じ。
   validates :name, presence: true, length: { maximum: 50 }
