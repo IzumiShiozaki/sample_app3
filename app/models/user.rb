@@ -1,5 +1,13 @@
 class User < ApplicationRecord
   has_many :microposts, dependent: :destroy #マイクロポストは、その所有者（ユーザー）と一緒に破棄されることを保証する
+  has_many :active_relationships, class_name: "Relationship", # 能動的関係に対して１対多 has_many の関連付けを実装する
+                      foreign_key: "follower_id",
+                      dependent: :destroy
+  has_many :passive_relationships, class_name: "Relationship", # 受動的関係を使ってuser.followersを実装する
+                      foreign_key: "followed_id",
+                      dependent: :destroy
+  has_many :following, through: :active_relationships, source: :followed     # Userモデルにfollowingの関連付けを追加する
+  has_many :followers, through: :passive_relationships, source: :follower
   attr_accessor :remember_token #rememberメソッドをUserモデルに追加する
   before_save { email.downcase! } #email属性を小文字に変換してメールアドレスの一意性を保証する。before_save {self.email = email.downcase }と同じ。
   validates :name, presence: true, length: { maximum: 50 }
@@ -43,5 +51,20 @@ class User < ApplicationRecord
   #完全な実装は次章の「ユーザーをフォローする」を参照
   def feed
     Micropost.where("user_id=?", id)
+  end
+
+  # ユーザーをフォローする
+  def follow(other_user)
+    following << other_user
+  end
+
+  # ユーザーをフォロー解除する
+  def unfollow(other_user)
+    active_relationships.find_by(followed_id: other_user.id).destroy
+  end
+
+  # 現在のユーザーがフォローしていたらtrueを返す
+  def following?(other_user)
+    following.include?(other_user)
   end
 end 
